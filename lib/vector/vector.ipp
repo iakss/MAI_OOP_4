@@ -104,7 +104,7 @@ template <typename T> void Vector<T>::Reserve(const std::size_t new_cap) {
     std::size_t to_alloc = std::max(new_cap, DEFAULT_CAPACITY);
     std::shared_ptr<T[]> new_data =
         std::make_shared_for_overwrite<T[]>(to_alloc);
-    if (std::is_trivially_copyable_v<T>) {
+    if constexpr (std::is_trivially_copyable_v<T>) {
       std::memcpy(new_data.get(), data_.get(), sizeof(T) * size_);
     } else {
       std::uninitialized_move(data_.get(), data_.get() + size_, new_data.get());
@@ -119,7 +119,7 @@ template <typename T> std::size_t Vector<T>::Capacity() const noexcept {
 }
 
 template <typename T> void Vector<T>::Clear() noexcept {
-  if (!std::is_trivially_destructible_v<T>) {
+  if constexpr (!std::is_trivially_destructible_v<T>) {
     for (std::size_t i = 0; i < size_; ++i) {
       data_[i].~T();
     }
@@ -133,7 +133,8 @@ void Vector<T>::Insert(std::size_t pos, U &&value) {
   if (size_ == capacity_) {
     Reserve(2 * capacity_);
   }
-  if (std::is_trivially_copyable_v<T> and std::is_trivially_destructible_v<T>) {
+  if constexpr (std::is_trivially_copyable_v<T> and
+                std::is_trivially_destructible_v<T>) {
     std::memmove(data_.get() + pos + 1, data_.get() + pos,
                  (size_ - pos) * sizeof(T));
   } else {
@@ -147,7 +148,8 @@ void Vector<T>::Insert(std::size_t pos, U &&value) {
 }
 
 template <typename T> void Vector<T>::Erase(std::size_t pos) {
-  if (std::is_trivially_copyable_v<T> and std::is_trivially_destructible_v<T>) {
+  if constexpr (std::is_trivially_copyable_v<T> and
+                std::is_trivially_destructible_v<T>) {
     std::memmove(data_.get() + pos, data_.get() + pos + 1,
                  (size_ - pos - 1) * sizeof(T));
   } else {
@@ -176,7 +178,7 @@ void Vector<T>::EmplaceBack(Args &&...args) {
 }
 
 template <typename T> void Vector<T>::PopBack() noexcept {
-  if (!std::is_trivially_destructible_v<T>) {
+  if constexpr (!std::is_trivially_destructible_v<T>) {
     Back().~T();
   }
   --size_;
